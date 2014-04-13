@@ -1,44 +1,38 @@
-/*global c3: true */
+/*global d3: true, dimple: true */
 
 (function () {
   'use strict';
 
-  var chart = c3.generate({
-    bindto: '#chart',
-    data: {
-      url: '/data.csv',
-      x: 'name',
-      names: {
-        sugar: 'Obsah cukru v lahvi (g)',
-        volume: 'Obsah lahve (ml)'
-      },
-      types: {
-        name: 'string',
-        sugar: 'bar',
-        volume: null
-      }
-    },
-    axis: {
-      rotated: true,
-      x: {
-        type: 'categorized',
-        tick: {
-          culling: {max: 0 }
-        }
-      },
-      y: {
-        max: 100,
-        min: 0,
-        // Range includes padding, set 0 if no padding needed
-        // padding: {top:0, bottom:0}
-      }
-    },
-    padding: {
-      left: 100,
-    },
-    size: {
-      height: 600,
-    },
+  var svg = dimple.newSvg('#chartContainer', 800, 400);
+
+  d3.csv('/data.csv', function (data) {
+    var popup = null;
+    var dataset = data.map(function (d) {
+      return {
+        name: d.name,
+        sugar: parseFloat(d.sugar),
+        volume: +d.volume
+      };
+    });
+    var myChart = new dimple.chart(svg, dataset);
+    myChart.setMargins(170, 30, 30, 100);
+    var x = myChart.addMeasureAxis('x', 'sugar');
+    x.overrideMax = 100;
+    var y = myChart.addCategoryAxis('y', 'name');
+    // y.addOrderRule('sugar', false);
+    y.addOrderRule(function (a, b) { // one cannot simply sort floats...
+      return a.sugar[0] - b.sugar[0];
+    });
+
+    var x2 = myChart.addMeasureAxis('z', 'volume');
+    x2.hidden = true;
+
+    var series = myChart.addSeries(null, dimple.plot.bar);
+    myChart.draw();
+    x.tickFormat = '.2f';
+    x.titleShape.text('Cukr (g)');
+    y.titleShape.remove();
+
   });
 
 })();
